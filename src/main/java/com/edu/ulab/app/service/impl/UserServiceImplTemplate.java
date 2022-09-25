@@ -1,31 +1,35 @@
 package com.edu.ulab.app.service.impl;
 
 import com.edu.ulab.app.dto.UserDto;
+import com.edu.ulab.app.entity.Person;
+import com.edu.ulab.app.exception.BadRequestExceptionUpdate;
+import com.edu.ulab.app.exception.NotFoundException;
+import com.edu.ulab.app.mapper.UserMapper;
 import com.edu.ulab.app.service.UserService;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.PreparedStatementCreator;
 import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Service;
 
-import java.sql.Connection;
 import java.sql.PreparedStatement;
-import java.sql.SQLException;
 import java.util.Objects;
 
 @Slf4j
 @Service
 public class UserServiceImplTemplate implements UserService {
     private final JdbcTemplate jdbcTemplate;
+    private final UserMapper userMapper;
 
-    public UserServiceImplTemplate(JdbcTemplate jdbcTemplate) {
+    public UserServiceImplTemplate(JdbcTemplate jdbcTemplate, UserMapper userMapper) {
         this.jdbcTemplate = jdbcTemplate;
+        this.userMapper = userMapper;
     }
 
     @Override
     public UserDto createUser(UserDto userDto) {
-
+        if (Objects.isNull(userDto)){throw new NotFoundException("userDto is null");}
         final String INSERT_SQL = "INSERT INTO PERSON(FULL_NAME, TITLE, AGE) VALUES (?,?,?)";
         KeyHolder keyHolder = new GeneratedKeyHolder();
         jdbcTemplate.update(
@@ -38,23 +42,54 @@ public class UserServiceImplTemplate implements UserService {
                 }, keyHolder);
 
         userDto.setId(Objects.requireNonNull(keyHolder.getKey()).longValue());
+        log.info("Saved user: {}", userDto);
         return userDto;
     }
 
     @Override
     public UserDto updateUser(UserDto userDto) {
-        // реализовать недстающие методы
-        return null;
+        if (Objects.isNull(userDto) || Objects.isNull(userDto.getId())){
+            throw new BadRequestExceptionUpdate(userDto);
+        }
+        Person user = userMapper.userDtoToPerson(userDto);
+        log.info("Mapped user: {}", user);
+        final String INSERT_SQL = "UPDATE PERSON SET FULL_NAME=?, TITLE=?, AGE=? WHERE ID=?";
+        int check = jdbcTemplate.update(INSERT_SQL,
+                    user.getFullName(),
+                    user.getTitle(),
+                    user.getAge(),
+                    user.getId());
+        if (check==0){
+            throw new NotFoundException("User not found");
+        }
+        log.info("updated user: {}", user);
+        return userMapper.personToUserDto(user);
     }
 
     @Override
     public UserDto getUserById(Long id) {
-        // реализовать недстающие методы
-        return null;
+        if (Objects.isNull(id)){throw new NotFoundException("id is null");}
+        final String GET_SQL = "SELECT * FROM PERSON WHERE ID=?";
+        try {
+            Person user = jdbcTemplate.queryForObject(
+                    GET_SQL,
+                    (rs, rowNum) -> new Person(
+                            rs.getLong("ID"),
+                            rs.getString("FULL_NAME"),
+                            rs.getString("TITLE"),
+                            rs.getInt("AGE")),
+                    id
+            );
+            return userMapper.personToUserDto(user);
+        } catch (EmptyResultDataAccessException e){
+            throw new NotFoundException("User not found");
+        }
     }
 
     @Override
     public void deleteUserById(Long id) {
-        // реализовать недстающие методы
+        if (Objects.isNull(id)){throw new NotFoundException("id is null");}
+        final String DELETE_SQL = "DELETE FROM PERSON WHERE ID=?";
+        jdbcTemplate.update(DELETE_SQL, id);
     }
 }
