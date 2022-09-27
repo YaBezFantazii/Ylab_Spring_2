@@ -66,6 +66,7 @@ public class UserDataFacade {
                 .peek(bookDto -> bookDto.setUserId(createdUser.getId()))
                 .peek(mappedBookDto -> log.info("mapped book: {}", mappedBookDto))
                 .map(bookService::createBook)
+                .filter(Objects::nonNull)
                 .peek(createdBook -> log.info("Created book: {}", createdBook))
                 .toList();
 

@@ -34,6 +34,7 @@ public class BookServiceImplTemplate implements BookService {
     @Override
     public BookDto createBook(BookDto bookDto) {
         if (Objects.isNull(bookDto)){throw new NotFoundException("bookDto is null");}
+        if (bookIsEmpty(bookDto)) {return null;}
         final String INSERT_SQL = "INSERT INTO BOOK(TITLE, AUTHOR, PAGE_COUNT, USER_ID) VALUES (?,?,?,?)";
         KeyHolder keyHolder = new GeneratedKeyHolder();
         jdbcTemplate.update(

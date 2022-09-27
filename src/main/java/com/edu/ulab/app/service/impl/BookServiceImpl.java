@@ -33,6 +33,7 @@ public class BookServiceImpl implements BookService {
     @Override
     public BookDto createBook(BookDto bookDto) {
         if (Objects.isNull(bookDto)){throw new NotFoundException("bookDto is null");}
+        if (bookIsEmpty(bookDto)) {return null;}
         Book book = bookMapper.bookDtoToBook(bookDto);
         log.info("Mapped book: {}", book);
         Book savedBook = bookRepository.save(book);
