@@ -2,7 +2,8 @@ package com.edu.ulab.app.web;
 
 import com.edu.ulab.app.facade.UserDataFacade;
 import com.edu.ulab.app.web.constant.WebConstant;
-import com.edu.ulab.app.web.request.UserBookRequest;
+import com.edu.ulab.app.web.request.create.UserBookRequest;
+import com.edu.ulab.app.web.request.update.UserBookRequestUpdate;
 import com.edu.ulab.app.web.response.UserBookResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -10,13 +11,16 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import javax.validation.Valid;
 import javax.validation.constraints.Pattern;
 
 import static com.edu.ulab.app.web.constant.WebConstant.REQUEST_ID_PATTERN;
 import static com.edu.ulab.app.web.constant.WebConstant.RQID;
 
+@Validated
 @Slf4j
 @RestController
 @RequestMapping(value = WebConstant.VERSION_URL + "/user",
@@ -34,7 +38,7 @@ public class UserController {
                     @ApiResponse(description = "User book",
                             content = @Content(mediaType = MediaType.APPLICATION_JSON_VALUE,
                                     schema = @Schema(implementation = UserBookResponse.class)))})
-    public UserBookResponse createUserWithBooks(@RequestBody UserBookRequest request,
+    public UserBookResponse createUserWithBooks(@Valid @RequestBody UserBookRequest request,
                                                 @RequestHeader(RQID) @Pattern(regexp = REQUEST_ID_PATTERN) final String requestId) {
         UserBookResponse response = userDataFacade.createUserWithBooks(request);
         log.info("Response with created user and his books: {}", response);
@@ -42,7 +46,7 @@ public class UserController {
     }
 
     @PutMapping(value = "/update")
-    public UserBookResponse updateUserWithBooks(@RequestBody UserBookRequest request) {
+    public UserBookResponse updateUserWithBooks(@Valid @RequestBody UserBookRequestUpdate request) {
         UserBookResponse response = userDataFacade.updateUserWithBooks(request);
         log.info("Response with updated user and his books: {}", response);
         return response;
