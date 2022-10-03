@@ -1,6 +1,7 @@
 package com.edu.ulab.app.service.impl;
 
 import com.edu.ulab.app.dto.UserDto;
+import com.edu.ulab.app.entity.Book;
 import com.edu.ulab.app.entity.Person;
 import com.edu.ulab.app.exception.BadRequestExceptionUpdate;
 import com.edu.ulab.app.exception.NotFoundException;
@@ -14,6 +15,8 @@ import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Service;
 
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.Objects;
 
 @Slf4j
@@ -27,6 +30,14 @@ public class UserServiceImplTemplate implements UserService {
         this.userMapper = userMapper;
     }
 
+    private Person mapRowToPerson(ResultSet resultSet, int rowNum) throws SQLException {
+        Person person = new Person();
+        person.setId(resultSet.getLong("ID"));
+        person.setTitle(resultSet.getString("TITLE"));
+        person.setFullName(resultSet.getString("FULL_NAME"));
+        person.setAge(resultSet.getInt("AGE"));
+        return person;
+    }
     @Override
     public UserDto createUser(UserDto userDto) {
         if (Objects.isNull(userDto)){throw new NotFoundException("userDto is null");}
@@ -73,11 +84,7 @@ public class UserServiceImplTemplate implements UserService {
         try {
             Person user = jdbcTemplate.queryForObject(
                     GET_SQL,
-                    (rs, rowNum) -> new Person(
-                            rs.getLong("ID"),
-                            rs.getString("FULL_NAME"),
-                            rs.getString("TITLE"),
-                            rs.getInt("AGE")),
+                    this::mapRowToPerson,
                     id
             );
             return userMapper.personToUserDto(user);

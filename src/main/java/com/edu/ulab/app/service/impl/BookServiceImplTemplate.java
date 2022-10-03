@@ -13,6 +13,8 @@ import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Service;
 
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.List;
 import java.util.Objects;
 
@@ -29,6 +31,16 @@ public class BookServiceImplTemplate implements BookService {
     }
     private boolean bookIsEmpty (BookDto bookDto){
         return  bookDto.getTitle() == null && bookDto.getAuthor() == null && bookDto.getPageCount() == 0;
+    }
+
+    private Book mapRowToBook(ResultSet resultSet, int rowNum) throws SQLException {
+        Book book = new Book();
+        book.setId(resultSet.getLong("ID"));
+        book.setTitle(resultSet.getString("TITLE"));
+        book.setAuthor(resultSet.getString("AUTHOR"));
+        book.setPageCount(resultSet.getLong("PAGE_COUNT"));
+        book.setUserId(resultSet.getLong("USER_ID"));
+        return book;
     }
 
     @Override
@@ -110,12 +122,7 @@ public class BookServiceImplTemplate implements BookService {
         final String GET_SQL = "SELECT * FROM BOOK WHERE USER_ID=?";
         List<Book> listBook = jdbcTemplate.query(
                 GET_SQL,
-                (rs, rowNum) -> new Book(
-                        rs.getLong("ID"),
-                        rs.getLong("USER_ID"),
-                        rs.getString("TITLE"),
-                        rs.getString("AUTHOR"),
-                        rs.getLong("PAGE_COUNT")),
+                this::mapRowToBook,
                 id);
         return listBook.stream().map(bookMapper::bookToBookDto).toList();
     }

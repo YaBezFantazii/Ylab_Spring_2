@@ -21,23 +21,33 @@ import java.util.Objects;
 @Slf4j
 @Component
 public class UserDataFacade {
-    private final UserServiceImplTemplate userService;
-    private final BookServiceImplTemplate bookService;
-    //private final UserServiceImpl userService;
-    //private final BookServiceImpl bookService;
+    //private final UserServiceImplTemplate userService;
+    //private final BookServiceImplTemplate bookService;
+    private final UserServiceImpl userService;
+    private final BookServiceImpl bookService;
     private final UserMapper userMapper;
     private final BookMapper bookMapper;
 
-    public UserDataFacade(UserServiceImplTemplate userService,
-                          BookServiceImplTemplate bookService,
-                          //BookServiceImpl bookService,
-                          //UserServiceImpl userService,
+    public UserDataFacade(//UserServiceImplTemplate userService,
+                          //BookServiceImplTemplate bookService,
+                          BookServiceImpl bookService,
+                          UserServiceImpl userService,
                           UserMapper userMapper,
                           BookMapper bookMapper) {
         this.userService = userService;
         this.bookService = bookService;
         this.userMapper = userMapper;
         this.bookMapper = bookMapper;
+    }
+
+    private UserBookResponse mapUserBookResponse (UserDto userDto, List<BookDto> bookDtos){
+        UserBookResponse userBookResponse = new UserBookResponse();
+        userBookResponse.setUserId(userDto.getId());
+        userBookResponse.setFullName(userDto.getFullName());
+        userBookResponse.setTitle(userDto.getTitle());
+        userBookResponse.setAge(userDto.getAge());
+        userBookResponse.setBookList(bookDtos);
+        return userBookResponse;
     }
 
     public UserBookResponse createUserWithBooks(UserBookRequest userBookRequest) {
@@ -47,17 +57,6 @@ public class UserDataFacade {
 
         UserDto createdUser = userService.createUser(userDto);
         log.info("Created user: {}", createdUser);
-
-//        List<Long> bookIdList = userBookRequest.getBookRequests()
-//                .stream()
-//                .filter(Objects::nonNull)
-//                .map(bookMapper::bookRequestToBookDto)
-//                .peek(bookDto -> bookDto.setUserId(createdUser.getId()))
-//                .peek(mappedBookDto -> log.info("mapped book: {}", mappedBookDto))
-//                .map(bookService::createBook)
-//                .peek(createdBook -> log.info("Created book: {}", createdBook))
-//                .map(BookDto::getId)
-//                .toList();
 
         List<BookDto> bookList = userBookRequest.getBookRequests()
                 .stream()
@@ -70,17 +69,9 @@ public class UserDataFacade {
                 .peek(createdBook -> log.info("Created book: {}", createdBook))
                 .toList();
 
-//        log.info("Collected book ids: {}", bookIdList);
         log.info("Collected book : {}", bookList);
 
-        return UserBookResponse.builder()
-                .userId(createdUser.getId())
-                .fullName(createdUser.getFullName())
-                .title(createdUser.getTitle())
-                .age(createdUser.getAge())
-//                .booksIdList(bookIdList)
-                .bookList(bookList)
-                .build();
+        return mapUserBookResponse(createdUser,bookList);
     }
 
     public UserBookResponse updateUserWithBooks(UserBookRequestUpdate userBookRequestUpdate) {
@@ -100,13 +91,7 @@ public class UserDataFacade {
                 .peek(mappedBookDto -> log.info("updated book (list): {}", mappedBookDto))
                 .toList();
 
-        return UserBookResponse.builder()
-                .userId(updatedUser.getId())
-                .fullName(updatedUser.getFullName())
-                .title(updatedUser.getTitle())
-                .age(updatedUser.getAge())
-                .bookList(bookList)
-                .build();
+        return mapUserBookResponse(updatedUser,bookList);
     }
 
     public UserBookResponse getUserWithBooks(Long userId) {
@@ -119,19 +104,13 @@ public class UserDataFacade {
                 .peek(getBook -> log.info("Get book: {}", getBook))
                 .toList();
 
-        return UserBookResponse.builder()
-                .userId(getUser.getId())
-                .fullName(getUser.getFullName())
-                .title(getUser.getTitle())
-                .age(getUser.getAge())
-                .bookList(bookList)
-                .build();
+        return mapUserBookResponse(getUser,bookList);
     }
 
     public void deleteUserWithBooks(Long userId) {
-        userService.deleteUserById(userId);
-        log.info("Delete user id: {}", userId);
         bookService.deleteBookById(userId);
         log.info("Delete books by user id: {}", userId);
+        userService.deleteUserById(userId);
+        log.info("Delete user id: {}", userId);
     }
 }
